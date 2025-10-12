@@ -146,7 +146,7 @@ def record_filled_order(account: dict, transaction: str, order: Order) -> tuple[
                 del account["positions"][order.ticker]
                 del account["unmatched_trades"][order.ticker]
             else:
-                unmatched_trades = deque(account["unmatched_trades"])
+                unmatched_trades = deque(account["unmatched_trades"][order.ticker])
                 shares_remaining = shares
                 while shares_remaining > 0:
                     if abs(unmatched_trades[0]["shares"]) > shares_remaining:
@@ -172,7 +172,7 @@ def record_filled_order(account: dict, transaction: str, order: Order) -> tuple[
                 del account["positions"][order.ticker]
                 del account["unmatched_trades"][order.ticker]
             else:
-                unmatched_trades = deque(account["unmatched_trades"])
+                unmatched_trades = deque(account["unmatched_trades"][order.ticker])
                 shares_remaining = shares
                 while shares_remaining < 0:
                     if unmatched_trades[0]["shares"] > abs(shares_remaining):
@@ -253,15 +253,17 @@ async def execute_market_order(interaction: discord.Interaction, account_name: s
         await interaction.response.send_message(f"Account `{account_name}` does not exist.")
         return
     
+    await interaction.response.defer(thinking=True)  
+    
     accounts = load_accounts()
     account = accounts[account_name]
     order_object = order.market_order(ticker, shares, get_current_time())
 
     if order_object.status == "Invalid ticker":
-        await interaction.response.send_message(f"Ticker `{ticker}` invalid.")
+        await interaction.followup.send(f"Ticker `{ticker}` invalid.")
         return
     elif order_object.status == "Market is closed":
-        await interaction.response.send_message(f"Market is closed")
+        await interaction.followup.send(f"Market is closed")
         return
     elif order_object.status == "Reconciliation":
         reconciliation_orders.append({
@@ -269,17 +271,17 @@ async def execute_market_order(interaction: discord.Interaction, account_name: s
             "transaction": transaction,
             "order": order_object
         })
-        await interaction.response.send_message(f"Order pending")
+        await interaction.followup.send(f"Order pending")
         return
     elif order_object.status == "Filled":
         updated_account, status = record_filled_order(account, transaction, order_object)
         if status == "Not enough funds":
-            await interaction.response.send_message(f"Not enough account funds in {account_name}")
+            await interaction.followup.send(f"Not enough account funds in {account_name}")
             return 
         elif status == "Filled":
             accounts[account_name] = updated_account
             save_accounts(accounts)
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Market order filled: {shares} shares of {ticker} at ${order_object.fill_price:,.2f} for {account_name}.",
             )
 
