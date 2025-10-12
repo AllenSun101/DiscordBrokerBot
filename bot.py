@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import json
 import os
 from dotenv import load_dotenv
@@ -10,6 +10,8 @@ from order import Order
 from collections import deque
 import data
 import performance
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import pytz
 
 load_dotenv() 
 
@@ -33,6 +35,11 @@ async def on_ready():
 def get_current_date():
     now_utc = datetime.now(timezone.utc)
     return now_utc.date()
+
+def get_prev_date():
+    now_utc = datetime.now(timezone.utc)
+    prev_date = now_utc.date() - timedelta(days=1)
+    return prev_date
 
 def get_current_time():
     now_utc = datetime.now(timezone.utc)
@@ -381,9 +388,6 @@ async def get_pending_orders(interaction: discord.Interaction):
 
     await interaction.response.send_message(report)
 
-def daily_scheduled_report():
-    pass
-
 @bot.tree.command(name="account_history", description="Get account history plot")
 @app_commands.describe(name="Name of your account")
 async def account_history(interaction: discord.Interaction, name: str):
@@ -427,5 +431,39 @@ async def info(interaction: discord.Interaction):
             "Pending orders can be rejected if you do not have sufficient funds."
         )
     )
+
+scheduler = AsyncIOScheduler(timezone=pytz.UTC)
+
+@scheduler.scheduled_job('cron', hour=0, minute=0, second=0)
+async def daily_scheduled_report():
+    channel = bot.get_channel(ALLOWED_CHANNEL_ID)
+
+    report = f"Daily update:\n"
+    updated_accounts = load_accounts()
+    accounts = load_accounts()
+    for account_name in accounts:
+        account = accounts[account_name]
+        account_info = evaluate_account_positions(account_name)[1]
+        account_value = account_info["account_value"]
+        day_pnl = account_info["day_pnl"]
+        day_change = account_info["day_change"]
+        if day_pnl > 0:
+            report += f"- {account_name}: ${account_value:,.2f} (🟢 {day_pnl:+,.2f} {day_change:+,.2f}%)\n"
+        elif day_pnl < 0:
+            report += f"- {account_name}: ${account_value:,.2f} (🔴 {day_pnl:+,.2f} {day_change:+,.2f}%)\n"
+        else:
+            report += f"- {account_name}: ${account_value:,.2f} (⚪ {day_pnl:+,.2f} {day_change:+,.2f}%)\n"
+
+        starting_value = list(account["account_history"].values())[0]["value"]
+        pnl = account_value - starting_value
+        account_return = round(pnl / starting_value * 100, 2)
+        
+        updated_accounts[account_name]["account_history"][str(get_prev_date())] = {
+            "value": account_value,
+            "return": account_return
+        }
+    
+    save_accounts(updated_accounts)
+    await channel.send(report)
 
 bot.run(DISCORD_TOKEN)
