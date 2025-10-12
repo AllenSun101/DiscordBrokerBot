@@ -6,6 +6,10 @@ from pydantic import BaseModel
 
 class Order(BaseModel):
     type: str
+    ticker: str
+    shares: int
+    fill_price: float
+    timestamp: datetime
     status: str
 
 def get_market_open_close() -> tuple[datetime, datetime]:
@@ -17,24 +21,27 @@ def get_market_open_close() -> tuple[datetime, datetime]:
 
     return market_open.astimezone(pytz.utc), market_close.astimezone(pytz.utc)
 
-def market_order(ticker: str, timestamp: datetime) -> Order:
-
-    latest_price, latest_timestamp = data.get_latest_price(ticker)
-    # if ticker not found?
-
-    # If outside of market hours, do not allow
-    if latest_timestamp < timestamp:
-        return Order("Market is closed.")
-    # If last price was from previous day, do not allow
-
+def market_order(ticker: str, shares: int, timestamp: datetime) -> Order:
+    print(ticker, shares, timestamp)
+    latest, prev, asset_type = data.get_asset_info(ticker)
+    latest_price, latest_timestamp = latest
+    print(latest_price, latest_timestamp)
     market_open, market_close = get_market_open_close()
-    if timestamp < market_open or timestamp > market_close:
-        return Order("Market is closed.")
+    
+    if latest_price is None:
+        return Order(type="market", ticker=ticker, shares=0, fill_price=0, timestamp=timestamp, status="Invalid ticker")
+        
+    timestamp_date = latest_timestamp.date()
+    current_date = timestamp.date()
 
-    if latest_timestamp >= timestamp:
-        pass # fill order
+    if timestamp_date != current_date:
+        return Order(type="market", ticker=ticker, shares=0, fill_price=0, timestamp=timestamp, status="Market is closed")
+    elif asset_type == "EQUITY" and (timestamp < market_open or timestamp > market_close):
+        return Order(type="market", ticker=ticker, shares=0, fill_price=0, timestamp=timestamp, status="Market is closed")
+    elif timestamp.replace(second=0, microsecond=0) > latest_timestamp.replace(second=0, microsecond=0):
+        return Order(type="market", ticker=ticker, shares=shares, fill_price=0, timestamp=timestamp, status="Reconciliation")
     else:
-        pass # reconciliation
+        return Order(type="market", ticker=ticker, shares=shares, fill_price=latest_price, timestamp=timestamp, status="Filled")
 
-now_utc = datetime.now(timezone.utc)
-print(now_utc)
+# now_utc = datetime.now(timezone.utc)
+# print(market_order("AAPL", now_utc))
