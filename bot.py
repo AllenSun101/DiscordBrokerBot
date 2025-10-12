@@ -9,6 +9,7 @@ import order
 from order import Order
 from collections import deque
 import data
+import performance
 
 load_dotenv() 
 
@@ -321,7 +322,7 @@ async def portfolio_summary(interaction: discord.Interaction, name: str):
 @app_commands.describe(name="Name of your account", starting_value="Starting cash value")
 async def create_account(interaction: discord.Interaction, name: str, starting_value: float):
     if name in get_account_names():
-        await interaction.response.send_message(f"Account `{name}` already exists.", ephemeral=True)
+        await interaction.response.send_message(f"Account `{name}` already exists.")
         return
     
     account_history = {str(get_current_date()): {"value": starting_value, "return": 0}}
@@ -343,7 +344,7 @@ async def create_account(interaction: discord.Interaction, name: str, starting_v
 @app_commands.describe(name="Name of the account")
 async def delete_account(interaction: discord.Interaction, name: str):
     if name not in get_account_names():
-        await interaction.response.send_message(f"Account `{name}` does not exist.", ephemeral=True)
+        await interaction.response.send_message(f"Account `{name}` does not exist.")
         return
     del load_accounts()[name]
     await interaction.response.send_message(f"Account `{name}` has been deleted.")
@@ -383,8 +384,39 @@ async def get_pending_orders(interaction: discord.Interaction):
 def daily_scheduled_report():
     pass
 
-def show_historical_returns():
-    pass
+@bot.tree.command(name="account_history", description="Get account history plot")
+@app_commands.describe(name="Name of your account")
+async def account_history(interaction: discord.Interaction, name: str):
+    if name not in get_account_names():
+        await interaction.response.send_message(f"Account `{name}` does not exist.")
+        return
+
+    account_history = load_accounts()[name]["account_history"]
+    buf = performance.get_history_plot(name, account_history)
+    file = discord.File(fp=buf, filename=f"{name}_history.png")
+    await interaction.response.send_message(file=file)
+
+@bot.tree.command(name="account_returns", description="Get account returns plot")
+@app_commands.describe(name="Name of your account")
+async def account_returns(interaction: discord.Interaction, name: str):
+    if name not in get_account_names():
+        await interaction.response.send_message(f"Account `{name}` does not exist.")
+        return
+
+    account_history = load_accounts()[name]["account_history"]
+    buf = performance.get_returns_plot(name, account_history)
+    file = discord.File(fp=buf, filename=f"{name}_returns.png")
+    await interaction.response.send_message(file=file)
+
+@bot.tree.command(name="multi_account_returns", description="Get account returns plot for all accounts")
+async def account_returns(interaction: discord.Interaction):
+    accounts = {}
+    account_infos = load_accounts()
+    for account in account_infos:
+        accounts[account] = account_infos[account]["account_history"]
+    buf = performance.get_multi_returns_plot(accounts)
+    file = discord.File(fp=buf, filename=f"multi_returns.png")
+    await interaction.response.send_message(file=file)
 
 @bot.tree.command(name="info", description="Show bot info")
 async def info(interaction: discord.Interaction):
