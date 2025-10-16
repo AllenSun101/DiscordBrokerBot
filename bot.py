@@ -292,9 +292,11 @@ async def execute_market_order(interaction: discord.Interaction, account_name: s
 @bot.tree.command(name="portfolio_summary", description="Show portfolio summary")
 @app_commands.describe(name="Account name")
 async def portfolio_summary(interaction: discord.Interaction, name: str):
+    await interaction.response.defer(thinking=True)  
+
     positions_info, account_info = evaluate_account_positions(name)
     if positions_info is None:
-        await interaction.response.send_message(f"Account `{name}` does not exist.")
+        await interaction.followup.send(f"Account `{name}` does not exist.")
         return
 
     headers = ["Ticker", "Shares", "Price", "Value", "Cost Basis", "P/L"]
@@ -329,7 +331,7 @@ async def portfolio_summary(interaction: discord.Interaction, name: str):
         f"{header_line}\n{separator}\n{data_lines}"
     )
 
-    await interaction.response.send_message(report)
+    await interaction.followup.send(report)
 
 @bot.tree.command(name="create_account", description="Create a trading account")
 @app_commands.describe(name="Name of your account", starting_value="Starting cash value")
@@ -364,6 +366,8 @@ async def delete_account(interaction: discord.Interaction, name: str):
 
 @bot.tree.command(name="accounts_list", description="Show list of accounts")
 async def show_accounts_list(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True)  
+
     report = f"Accounts list:\n"
     for account in load_accounts():
         account_info = evaluate_account_positions(account)[1]
@@ -377,7 +381,7 @@ async def show_accounts_list(interaction: discord.Interaction):
         else:
             report += f"- {account}: ${account_value:,.2f} (⚪ {day_pnl:+,.2f} {day_change:+,.2f}%)\n"
 
-    await interaction.response.send_message(report)
+    await interaction.followup.send(report)
 
 @bot.tree.command(name="pending_orders", description="Show pending orders")
 async def get_pending_orders(interaction: discord.Interaction):
