@@ -20,8 +20,11 @@ ALLOWED_CHANNEL_ID = int(os.getenv("ALLOWED_CHANNEL_ID", "0"))
 db_file_path = os.getenv("FILE_PATH", "")
 db_path = os.path.join(db_file_path, "db.json")
 
+not_enough_funds_message = os.getenv("NOT_ENOUGH_FUNDS_MESSAGE", "")
+
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
+scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 
 reconciliation_orders = []
 
@@ -30,6 +33,7 @@ async def on_ready():
     await bot.tree.sync()
     if not process_reconciliation_orders.is_running():
         process_reconciliation_orders.start()
+    scheduler.start()
     print(f"✅ Logged in as {bot.user} (ID: {bot.user.id})")
 
 def get_current_date():
@@ -229,7 +233,7 @@ async def process_reconciliation_orders():
                 accounts[account_name] = updated_account
                 save_accounts(accounts)
                 await channel.send(
-                    f"Market order filled: {order_info.shares} shares of {order_info.ticker} at ${order_object.fill_price:,.2f} for {account_name}.",
+                    f"😎 Market order filled: {order_info.shares} shares of {order_info.ticker} at ${order_object.fill_price:,.2f} for {account_name}.",
                 )
 
     reconciliation_orders = unfilled_reconciliation_orders
@@ -282,7 +286,7 @@ async def execute_market_order(interaction: discord.Interaction, account_name: s
             accounts[account_name] = updated_account
             save_accounts(accounts)
             await interaction.followup.send(
-                f"Market order filled: {shares} shares of {ticker} at ${order_object.fill_price:,.2f} for {account_name}.",
+                f"😎 Market order filled: {shares} shares of {ticker} at ${order_object.fill_price:,.2f} for {account_name}.",
             )
 
 @bot.tree.command(name="portfolio_summary", description="Show portfolio summary")
@@ -433,8 +437,6 @@ async def info(interaction: discord.Interaction):
             "Pending orders can be rejected if you do not have sufficient funds."
         )
     )
-
-scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 
 @scheduler.scheduled_job('cron', hour=0, minute=0, second=0)
 async def daily_scheduled_report():
