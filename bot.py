@@ -12,6 +12,7 @@ import data
 import performance
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import pytz
+from math import ceil
 
 load_dotenv() 
 
@@ -441,6 +442,41 @@ async def info(interaction: discord.Interaction):
             "Pending orders can be rejected if you do not have sufficient funds."
         )
     )
+
+@bot.tree.command(name="getquote", description="Show quote info")
+@app_commands.describe(ticker="Stock Ticker")
+async def get_quote(interaction: discord.Interaction, ticker: str):
+    await interaction.response.defer(thinking=True)
+
+    latest_price, previous_close, asset_type = data.get_asset_info(ticker)
+
+    if latest_price is None:
+        await interaction.followup.send(f"Ticker `{ticker}` is invalid.")
+
+    report = f"{ticker}: ${round(latest_price[0], 2)} "
+
+    day_pnl = latest_price[0] - previous_close[0]
+    day_change = day_pnl / previous_close[0] * 100
+
+    if day_pnl > 0:
+        report += f"(🟢 {day_pnl:+,.2f} {day_change:+,.2f}%)\n"
+    elif day_pnl < 0:
+        report += f"(🔴 {day_pnl:+,.2f} {day_change:+,.2f}%)\n"
+    else:
+        report += f"(⚪ {day_pnl:+,.2f} {day_change:+,.2f}%)\n"
+
+    market_open, market_close = order.get_market_open_close()
+    current_time = get_current_time()
+
+    if get_current_date() != latest_price[1].date():
+        report += f"Market Closed"
+    elif asset_type == "EQUITY" and (current_time < market_open or current_time > market_close):
+        report += f"Market Closed"
+    else:
+        estimated_delay = ceil((current_time - latest_price[1]).total_seconds() / 60)
+        report += f"Estimated Delay: {estimated_delay} minutes"
+
+    await interaction.followup.send(report)
 
 @scheduler.scheduled_job('cron', hour=0, minute=0, second=0)
 async def daily_scheduled_report():
