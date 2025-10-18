@@ -13,6 +13,22 @@ import performance
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import pytz
 from math import ceil
+import threading
+from flask import Flask
+
+app = Flask("")
+
+@app.route("/")
+def home():
+    return "Bot is alive!"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+def keep_alive():
+    t = threading.Thread(target=run_flask)
+    t.start()
 
 load_dotenv() 
 
@@ -511,3 +527,4 @@ async def daily_scheduled_report():
     await channel.send(report)
 
 bot.run(DISCORD_TOKEN)
+keep_alive()
