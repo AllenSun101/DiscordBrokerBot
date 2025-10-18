@@ -1,9 +1,9 @@
-matplotlib
-pandas
-numpy
 discord.py
 python-dotenv
 apscheduler
 pytz
 yfinance
 pydantic
+matplotlib
+pandas
+numpy
