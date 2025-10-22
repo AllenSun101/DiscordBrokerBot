@@ -15,6 +15,7 @@ import pytz
 from math import ceil
 import threading
 from flask import Flask
+import aiohttp
 
 app = Flask("")
 
@@ -30,12 +31,21 @@ def keep_alive():
     t = threading.Thread(target=run_flask)
     t.start()
 
+async def keep_alive_ping():
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(deployment_url) as resp:
+                print(f"Pinged self ({resp.status})")
+    except Exception as e:
+        print(f"Ping failed: {e}")
+
 load_dotenv() 
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 ALLOWED_CHANNEL_ID = int(os.getenv("ALLOWED_CHANNEL_ID", "0"))
 db_file_path = os.getenv("FILE_PATH", "")
 db_path = os.path.join(db_file_path, "db.json")
+deployment_url = os.getenv("DEPLOYMENT_URL", "")
 
 not_enough_funds_message = os.getenv("NOT_ENOUGH_FUNDS_MESSAGE", "")
 
@@ -270,6 +280,8 @@ async def execute_market_order(interaction: discord.Interaction, account_name: s
                                transaction: str, ticker: str, shares: int):
     global reconciliation_orders
 
+    await keep_alive_ping()
+
     if account_name not in get_account_names():
         await interaction.response.send_message(f"Account `{account_name}` does not exist.")
         return
@@ -310,6 +322,8 @@ async def execute_market_order(interaction: discord.Interaction, account_name: s
 @app_commands.describe(name="Account name")
 async def portfolio_summary(interaction: discord.Interaction, name: str):
     await interaction.response.defer(thinking=True)  
+
+    await keep_alive_ping()
 
     positions_info, account_info = evaluate_account_positions(name)
     if positions_info is None:
@@ -385,6 +399,8 @@ async def delete_account(interaction: discord.Interaction, name: str):
 async def show_accounts_list(interaction: discord.Interaction):
     await interaction.response.defer(thinking=True)  
 
+    await keep_alive_ping()
+
     report = f"Accounts list:\n"
     for account in load_accounts():
         account_info = evaluate_account_positions(account)[1]
@@ -403,6 +419,8 @@ async def show_accounts_list(interaction: discord.Interaction):
 @bot.tree.command(name="pending_orders", description="Show pending orders")
 async def get_pending_orders(interaction: discord.Interaction):
     global reconciliation_orders
+
+    await keep_alive_ping()
 
     report = f"Pending orders:\n"
     for reconciliation_order in reconciliation_orders:
@@ -440,7 +458,7 @@ async def account_returns(interaction: discord.Interaction, name: str):
     await interaction.response.send_message(file=file)
 
 @bot.tree.command(name="multi_account_returns", description="Get account returns plot for all accounts")
-async def account_returns(interaction: discord.Interaction):
+async def multi_account_returns(interaction: discord.Interaction):
     accounts = {}
     account_infos = load_accounts()
     for account in account_infos:
@@ -463,6 +481,8 @@ async def info(interaction: discord.Interaction):
 @app_commands.describe(ticker="Stock Ticker")
 async def get_quote(interaction: discord.Interaction, ticker: str):
     await interaction.response.defer(thinking=True)
+
+    await keep_alive_ping()
 
     latest_price, previous_close, asset_type = data.get_asset_info(ticker)
 
