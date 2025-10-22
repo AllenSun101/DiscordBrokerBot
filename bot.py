@@ -381,7 +381,7 @@ async def create_account(interaction: discord.Interaction, name: str, starting_v
         await interaction.response.send_message(f"Account `{name}` already exists.")
         return
     
-    account_history = {str(get_current_date()): {"value": starting_value, "return": 0}}
+    account_history = {str(get_prev_date()): {"value": starting_value, "return": 0}}
     
     account_info = {
         "cash": starting_value,
@@ -524,7 +524,7 @@ async def get_quote(interaction: discord.Interaction, ticker: str):
 
     await interaction.followup.send(report)
 
-@scheduler.scheduled_job('cron', hour=0, minute=0, second=0)
+@scheduler.scheduled_job('cron', hour=1, minute=0, second=0)
 async def daily_scheduled_report():
     channel = bot.get_channel(ALLOWED_CHANNEL_ID)
 
