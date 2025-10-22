@@ -82,18 +82,23 @@ def get_current_time():
     return now_utc
 
 def load_accounts() -> dict:
-    if os.path.exists(db_path):
-        with open(db_path, "r") as f:
-            return json.load(f)
-    return {}
+    doc = collection.find_one()
+
+    if doc and "db" in doc:
+        return doc["db"]
+    else:
+        return {}
 
 def get_account_names() -> list[str]:
     accounts = load_accounts()
     return accounts.keys()
 
 def save_accounts(data: dict) -> None:
-    with open(db_path, "w") as f:
-        json.dump(data, f, indent=2)
+    collection.update_one(
+        {},
+        {"$set": {"db": data}},
+        upsert=True
+    )
 
 def evaluate_account_positions(account_name: str) -> tuple[dict, dict]:
     if account_name not in get_account_names():
