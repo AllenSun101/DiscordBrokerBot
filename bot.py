@@ -16,6 +16,11 @@ from math import ceil
 import threading
 from flask import Flask
 import aiohttp
+from pymongo import MongoClient
+
+client = MongoClient(os.getenv("MONGO_URI"))
+db = client[os.getenv("MONGO_DB")]
+collection = db[os.getenv("MONGO_COLLECTION")]
 
 app = Flask("")
 
@@ -546,5 +551,5 @@ async def daily_scheduled_report():
     save_accounts(updated_accounts)
     await channel.send(report)
 
-bot.run(DISCORD_TOKEN)
 keep_alive()
+bot.run(DISCORD_TOKEN)
