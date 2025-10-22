@@ -402,7 +402,9 @@ async def delete_account(interaction: discord.Interaction, name: str):
     if name not in get_account_names():
         await interaction.response.send_message(f"Account `{name}` does not exist.")
         return
-    del load_accounts()[name]
+    accounts = load_accounts()
+    del accounts[name]
+    save_accounts(accounts)
     await interaction.response.send_message(f"Account `{name}` has been deleted.")
 
 @bot.tree.command(name="accounts_list", description="Show list of accounts")
