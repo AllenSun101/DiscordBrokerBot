@@ -34,16 +34,17 @@ def close_chart(ticker: str, frequency: str) -> io.BytesIO:
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_facecolor("black")
 
-    ax.plot(times_naive, closes, color=line_color, linewidth=1.8, zorder=2, label="Price")
+    ax.plot(range(len(closes)), closes, color=line_color, linewidth=1.8, zorder=2, label="Price")
+    ax.set_xticks(range(0, len(times_naive), len(times_naive)//5))
+    ax.set_xticklabels([t.strftime("%b %d %I:%M %p") for t in times[::len(times_naive)//5]])
     
     ymin = min(min(closes), prev_close)
 
-    ax.fill_between(times_naive, closes, ymin,
+    ax.fill_between(range(len(closes)), closes, ymin,
                     color=fill_color, alpha=0.6, zorder=1)
 
     ax.axhline(prev_close, color="gray", linestyle="--", linewidth=1, alpha=0.9, label="Prev Close")
 
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d %I:%M %p"))
     fig.autofmt_xdate(rotation=30)
 
     ax.yaxis.set_major_formatter(mticker.StrMethodFormatter("{x:,.2f}"))
@@ -62,4 +63,4 @@ def close_chart(ticker: str, frequency: str) -> io.BytesIO:
     plt.close()
     return buf
 
-# plot_data("AAPL", "daily")
+# close_chart("AAPL", "daily")
