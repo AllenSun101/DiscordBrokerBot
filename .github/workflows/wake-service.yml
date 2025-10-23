@@ -4,10 +4,6 @@ name: Wake Render Service
 on:
   schedule:
     - cron: "55 00 * * *"  # 00:55 UTC = 01:00 UTC minus 5 min
-    - cron: "35 01 * * *"
-    - cron: "37 01 * * *"
-    - cron: "39 01 * * *"
-    - cron: "41 01 * * *"
   workflow_dispatch:       # optional manual trigger
 
 jobs:

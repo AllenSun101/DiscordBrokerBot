@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas as pd
-import numpy as np
 import io
 
 def get_history_plot(account_name: str, account_history: dict) -> io.BytesIO:

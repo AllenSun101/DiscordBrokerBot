@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands, tasks
 from discord import app_commands
 from datetime import datetime, timezone, timedelta
-import json
 import os
 from dotenv import load_dotenv
 import order
@@ -17,6 +16,7 @@ import threading
 from flask import Flask
 import aiohttp
 from pymongo import MongoClient
+import charts
 
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client[os.getenv("MONGO_DB")]
@@ -27,6 +27,10 @@ app = Flask("")
 @app.route("/")
 def home():
     return "Bot is alive!"
+
+@app.route("/cronjob")
+def cronjob():
+    return "", 204
 
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
@@ -525,6 +529,24 @@ async def get_quote(interaction: discord.Interaction, ticker: str):
         report += f"Estimated Delay: {estimated_delay} minutes"
 
     await interaction.followup.send(report)
+
+@bot.tree.command(name="five_minute_chart", description="Get 5 minute chart for a ticker")
+async def five_minute_chart(interaction: discord.Interaction, ticker: str):
+    buf = charts.close_chart(ticker, "5 minute")
+    file = discord.File(fp=buf, filename=f"five_minute_chart.png")
+    await interaction.response.send_message(file=file)
+
+@bot.tree.command(name="hourly_chart", description="Get hourly chart for a ticker")
+async def hourly_chart(interaction: discord.Interaction, ticker: str):
+    buf = charts.close_chart(ticker, "hourly")
+    file = discord.File(fp=buf, filename=f"hourly_chart.png")
+    await interaction.response.send_message(file=file)
+
+@bot.tree.command(name="daily_chart", description="Get daily chart for a ticker")
+async def daily_chart(interaction: discord.Interaction, ticker: str):
+    buf = charts.close_chart(ticker, "daily")
+    file = discord.File(fp=buf, filename=f"daily_chart.png")
+    await interaction.response.send_message(file=file)
 
 @scheduler.scheduled_job('cron', hour=1, minute=0, second=0)
 async def daily_scheduled_report():
