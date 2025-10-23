@@ -35,8 +35,10 @@ def close_chart(ticker: str, frequency: str) -> io.BytesIO:
     ax.set_facecolor("black")
 
     ax.plot(times_naive, closes, color=line_color, linewidth=1.8, zorder=2, label="Price")
+    
+    ymin = min(closes)
 
-    ax.fill_between(times_naive, closes, prev_close,
+    ax.fill_between(times_naive, closes, ymin,
                     color=fill_color, alpha=0.6, zorder=1)
 
     ax.axhline(prev_close, color="gray", linestyle="--", linewidth=1, alpha=0.9, label="Prev Close")
