@@ -531,22 +531,37 @@ async def get_quote(interaction: discord.Interaction, ticker: str):
     await interaction.followup.send(report)
 
 @bot.tree.command(name="five_minute_chart", description="Get 5 minute chart for a ticker")
+@app_commands.describe(ticker="Stock Ticker")
 async def five_minute_chart(interaction: discord.Interaction, ticker: str):
+    await interaction.response.defer(thinking=True)  
+
+    await keep_alive_ping()
+
     buf = charts.close_chart(ticker, "5 minute")
     file = discord.File(fp=buf, filename=f"five_minute_chart.png")
-    await interaction.response.send_message(file=file)
+    await interaction.followup.send(file=file)
 
 @bot.tree.command(name="hourly_chart", description="Get hourly chart for a ticker")
+@app_commands.describe(ticker="Stock Ticker")
 async def hourly_chart(interaction: discord.Interaction, ticker: str):
+    await interaction.response.defer(thinking=True)  
+
+    await keep_alive_ping()
+
     buf = charts.close_chart(ticker, "hourly")
     file = discord.File(fp=buf, filename=f"hourly_chart.png")
-    await interaction.response.send_message(file=file)
+    await interaction.followup.send(file=file)
 
 @bot.tree.command(name="daily_chart", description="Get daily chart for a ticker")
+@app_commands.describe(ticker="Stock Ticker")
 async def daily_chart(interaction: discord.Interaction, ticker: str):
+    await interaction.response.defer(thinking=True)  
+
+    await keep_alive_ping()
+
     buf = charts.close_chart(ticker, "daily")
     file = discord.File(fp=buf, filename=f"daily_chart.png")
-    await interaction.response.send_message(file=file)
+    await interaction.followup.send(file=file)
 
 @scheduler.scheduled_job('cron', hour=1, minute=0, second=0)
 async def daily_scheduled_report():

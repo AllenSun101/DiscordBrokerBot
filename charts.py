@@ -34,7 +34,7 @@ def close_chart(ticker: str, frequency: str) -> io.BytesIO:
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_facecolor("black")
 
-    ax.plot(times_naive, closes, color=line_color, linewidth=1.8, zorder=2, label="Close")
+    ax.plot(times_naive, closes, color=line_color, linewidth=1.8, zorder=2, label="Price")
 
     ax.fill_between(times_naive, closes, prev_close,
                     color=fill_color, alpha=0.6, zorder=1)
