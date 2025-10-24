@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
 import io
 import data
