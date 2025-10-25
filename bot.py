@@ -496,7 +496,7 @@ async def get_quote(interaction: discord.Interaction, ticker: str):
 
     await keep_alive_ping()
 
-    latest_price, previous_close, asset_type = data.get_asset_info(ticker)
+    latest_price, previous_close, asset_type = data.get_asset_info(ticker, True)
 
     if latest_price is None:
         await interaction.followup.send(f"Ticker `{ticker}` is invalid.")

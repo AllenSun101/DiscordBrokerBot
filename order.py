@@ -23,7 +23,7 @@ def get_market_open_close() -> tuple[datetime, datetime]:
 
 def market_order(ticker: str, shares: int, timestamp: datetime) -> Order:
     print(ticker, shares, timestamp)
-    latest, prev, asset_type = data.get_asset_info(ticker)
+    latest, prev, asset_type = data.get_asset_info(ticker, extended_hours=True)
     latest_price, latest_timestamp = latest
     print(latest_price, latest_timestamp)
     market_open, market_close = get_market_open_close()

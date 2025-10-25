@@ -1,7 +1,7 @@
 import yfinance as yf
 from datetime import datetime, timezone, timedelta
 
-def get_asset_info(ticker: str) -> tuple[tuple[float, datetime], tuple[float, datetime], str]:
+def get_asset_info(ticker: str, extended_hours: bool = False) -> tuple[tuple[float, datetime], tuple[float, datetime], str]:
     """
     Returns:
         latest_price: (float, datetime in UTC)
@@ -11,7 +11,7 @@ def get_asset_info(ticker: str) -> tuple[tuple[float, datetime], tuple[float, da
     asset = yf.Ticker(ticker)
     asset_type = asset.info.get("quoteType")
 
-    intraday = asset.history(period="1d", interval="1m", prepost=True)
+    intraday = asset.history(period="1d", interval="1m", prepost=extended_hours)
     if intraday.empty:
         latest_price = (None, None)
     else:
