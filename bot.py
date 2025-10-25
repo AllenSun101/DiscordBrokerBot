@@ -537,6 +537,16 @@ async def five_minute_chart(interaction: discord.Interaction, ticker: str):
     file = discord.File(fp=buf, filename=f"five_minute_chart.png")
     await interaction.followup.send(file=file)
 
+@bot.tree.command(name="extended_hours_five_minute_chart", description="Get extended hours 5 minute chart for a ticker")
+async def extended_hours_five_minute_chart(interaction: discord.Interaction, ticker: str):
+    await interaction.response.defer(thinking=True)  
+
+    await keep_alive_ping()
+
+    buf = charts.close_chart(ticker, "5 minute extended hours")
+    file = discord.File(fp=buf, filename=f"extended_hours_five_minute_chart.png")
+    await interaction.followup.send(file=file)
+
 @bot.tree.command(name="hourly_chart", description="Get hourly chart for a ticker")
 @app_commands.describe(ticker="Stock Ticker")
 async def hourly_chart(interaction: discord.Interaction, ticker: str):

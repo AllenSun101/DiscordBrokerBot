@@ -11,7 +11,7 @@ def get_asset_info(ticker: str) -> tuple[tuple[float, datetime], tuple[float, da
     asset = yf.Ticker(ticker)
     asset_type = asset.info.get("quoteType")
 
-    intraday = asset.history(period="1d", interval="1m")
+    intraday = asset.history(period="1d", interval="1m", prepost=True)
     if intraday.empty:
         latest_price = (None, None)
     else:
@@ -34,6 +34,12 @@ def get_asset_info(ticker: str) -> tuple[tuple[float, datetime], tuple[float, da
 def get_five_min_data(ticker: str) -> tuple[list[datetime], list[float], float]:
     asset = yf.Ticker(ticker)
     data = asset.history(period="1d", interval="5m")
+    prev_close = asset.info.get("previousClose", None)
+    return data.index.to_list(), data["Close"].to_list(), prev_close
+
+def get_extended_hours_five_min_data(ticker: str) -> tuple[list[datetime], list[float], float]:
+    asset = yf.Ticker(ticker)
+    data = asset.history(period="1d", interval="5m", prepost=True)
     prev_close = asset.info.get("previousClose", None)
     return data.index.to_list(), data["Close"].to_list(), prev_close
 
@@ -66,3 +72,4 @@ def get_daily_data(ticker: str) -> tuple[list[datetime], list[float], float]:
 
 # price, timestamp, type = get_asset_info("BTC-USD")
 # print(price, timestamp, type)
+# print(get_asset_info("AAPL"))

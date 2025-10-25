@@ -6,11 +6,13 @@ import data
 def close_chart(ticker: str, frequency: str) -> io.BytesIO:
     frequency_mappings = {
         "5 minute": data.get_five_min_data,
+        "5 minute extended hours": data.get_extended_hours_five_min_data,
         "hourly": data.get_hourly_data,
         "daily": data.get_daily_data
     }
     chart_title_mappings = {
         "5 minute": "5 Minute",
+        "5 minute extended hours": "5 Minute Extended Hours",
         "hourly": "Hourly",
         "daily": "Daily"
     }

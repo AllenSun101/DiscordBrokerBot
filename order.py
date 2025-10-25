@@ -16,8 +16,8 @@ def get_market_open_close() -> tuple[datetime, datetime]:
     eastern = pytz.timezone("America/New_York")
     now = datetime.now(eastern)
 
-    market_open = eastern.localize(datetime(now.year, now.month, now.day, 9, 30))
-    market_close = eastern.localize(datetime(now.year, now.month, now.day, 16, 0))
+    market_open = eastern.localize(datetime(now.year, now.month, now.day, 4, 0))
+    market_close = eastern.localize(datetime(now.year, now.month, now.day, 20, 0))
 
     return market_open.astimezone(pytz.utc), market_close.astimezone(pytz.utc)
 
