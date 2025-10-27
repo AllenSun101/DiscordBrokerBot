@@ -242,7 +242,7 @@ async def process_reconciliation_orders():
         
         if account_name not in get_account_names():
             await channel.send(f"Account `{account_name}` does not exist.")
-            return
+            continue
 
         accounts = load_accounts()
         account = accounts[account_name]
@@ -250,22 +250,21 @@ async def process_reconciliation_orders():
 
         if order_object.status == "Invalid ticker":
             await channel.send(f"Ticker `{order_object.ticker}` invalid.")
-            return
+            continue
         elif order_object.status == "Market is closed":
             await channel.send(f"Market is closed")
-            return
+            continue
         elif order_object.status == "Reconciliation":
             unfilled_reconciliation_orders.append({
                 "account": account_name,
                 "transaction": transaction,
                 "order": order_object
             })
-            return
+            continue
         elif order_object.status == "Filled":
             updated_account, status = record_filled_order(account, transaction, order_object)
             if status == "Not enough funds":
                 await channel.send(f"Not enough account funds in {account_name}")
-                return 
             elif status == "Filled":
                 accounts[account_name] = updated_account
                 save_accounts(accounts)
