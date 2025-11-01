@@ -17,6 +17,7 @@ from flask import Flask
 import aiohttp
 from pymongo import MongoClient
 import charts
+from sectors import sectors
 
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client[os.getenv("MONGO_DB")]
@@ -228,7 +229,7 @@ def record_filled_order(account: dict, transaction: str, order: Order) -> tuple[
 @tasks.loop(minutes=1)
 async def process_reconciliation_orders():
     global reconciliation_orders
-    print(reconciliation_orders)
+
     channel = bot.get_channel(ALLOWED_CHANNEL_ID)
     unfilled_reconciliation_orders = []
 
@@ -269,7 +270,7 @@ async def process_reconciliation_orders():
                 accounts[account_name] = updated_account
                 save_accounts(accounts)
                 await channel.send(
-                    f"😎 Market order filled: {order_info.shares} shares of {order_info.ticker} at ${order_object.fill_price:,.2f} for {account_name}.",
+                    f"😎 Market order filled: {transaction} {order_info.shares} shares of {order_info.ticker} at ${order_object.fill_price:,.2f} for {account_name}.",
                 )
 
     reconciliation_orders = unfilled_reconciliation_orders
@@ -324,7 +325,7 @@ async def execute_market_order(interaction: discord.Interaction, account_name: s
             accounts[account_name] = updated_account
             save_accounts(accounts)
             await interaction.followup.send(
-                f"😎 Market order filled: {shares} shares of {ticker} at ${order_object.fill_price:,.2f} for {account_name}.",
+                f"😎 Market order filled: {transaction} {shares} shares of {ticker} at ${order_object.fill_price:,.2f} for {account_name}.",
             )
 
 @bot.tree.command(name="portfolio_summary", description="Show portfolio summary")
@@ -487,6 +488,72 @@ async def info(interaction: discord.Interaction):
             "Pending orders can be rejected if you do not have sufficient funds."
         )
     )
+
+@app_commands.describe(
+    sector="Stock sector",
+)
+@app_commands.choices(transaction=[
+    app_commands.Choice(name="Information Technology", value="Information Technology"),
+    app_commands.Choice(name="Communication Services", value="Communication Services"),
+    app_commands.Choice(name="Consumer Discretionary", value="Consumer Discretionary"),
+    app_commands.Choice(name="Consumer Staples", value="Consumer Staples"),
+    app_commands.Choice(name="Financials", value="Financials"),
+    app_commands.Choice(name="Healthcare", value="Healthcare"),
+    app_commands.Choice(name="Industrials", value="Industrials"),
+    app_commands.Choice(name="Energy", value="Energy"),
+    app_commands.Choice(name="Materials", value="Materials"),
+    app_commands.Choice(name="Utilities", value="Utilities"),
+    app_commands.Choice(name="Real Estate", value="Real Estate"),
+])
+@bot.tree.command(name="sector_tickers", description="Show tickers by sector")
+async def info(interaction: discord.Interaction, sector: str):
+    sector_tickers = sectors[sector]
+    tickers_per_page = 20
+
+    formatted_tickers = [f"{ticker}: {name}" for ticker, name in sector_tickers.items()]
+
+    pages = [
+        formatted_tickers[i:i + tickers_per_page]
+        for i in range(0, len(formatted_tickers), tickers_per_page)
+    ]
+
+    class CatalogView(discord.ui.View):
+        def __init__(self):
+            super().__init__(timeout=None)
+            self.page = 0
+
+        async def update_message(self, interaction: discord.Interaction):
+            embed = discord.Embed(
+                title=f"{sector} Tickers",
+                description="\n".join(pages[self.page]),
+                color=discord.Color.blue()
+            )
+            embed.set_footer(text=f"Page {self.page + 1}/{len(pages)}")
+            await interaction.response.edit_message(embed=embed, view=self)
+
+        @discord.ui.button(label="⬅️ Prev", style=discord.ButtonStyle.secondary)
+        async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+            if self.page > 0:
+                self.page -= 1
+            elif self.page == 0:
+                self.page = len(pages) - 1
+            await self.update_message(interaction)
+
+        @discord.ui.button(label="➡️ Next", style=discord.ButtonStyle.secondary)
+        async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+            if self.page < len(pages) - 1:
+                self.page += 1
+            elif self.page == len(pages) - 1:
+                self.page = 0
+            await self.update_message(interaction)
+
+    first_embed = discord.Embed(
+        title="f{sector} Tickers",
+        description="\n".join(pages[0]),
+        color=discord.Color.blue()
+    )
+    first_embed.set_footer(text=f"Page 1/{len(pages)}")
+    await interaction.response.send_message(embed=first_embed, view=CatalogView())
 
 @bot.tree.command(name="getquote", description="Show quote info")
 @app_commands.describe(ticker="Stock Ticker")
