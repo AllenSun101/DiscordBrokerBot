@@ -340,7 +340,7 @@ async def portfolio_summary(interaction: discord.Interaction, name: str):
         await interaction.followup.send(f"Account `{name}` does not exist.")
         return
 
-    headers = ["Ticker", "Shares", "Price", "Value", "Cost Basis", "P/L"]
+    headers = ["Ticker", "Shares", "Price", "Day Change", "Value", "Cost Basis", "P/L", "Day P/L"]
     rows = []
 
     for ticker, pos in positions_info.items():
@@ -348,9 +348,11 @@ async def portfolio_summary(interaction: discord.Interaction, name: str):
             ticker,
             str(pos["shares"]),
             f"${pos['price']:,.2f}",
+            f"${pos['day_change']:+,.2f}",
             f"${pos['total_value']:,.2f}",
             f"${pos['cost_basis']:,.2f}",
             f"{pos['pnl']:+,.2f}",
+            f"{pos['day_pnl']:+,.2f}"
         ])
 
     col_widths = [
