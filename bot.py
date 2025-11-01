@@ -492,7 +492,7 @@ async def info(interaction: discord.Interaction):
 @app_commands.describe(
     sector="Stock sector",
 )
-@app_commands.choices(transaction=[
+@app_commands.choices(sector=[
     app_commands.Choice(name="Information Technology", value="Information Technology"),
     app_commands.Choice(name="Communication Services", value="Communication Services"),
     app_commands.Choice(name="Consumer Discretionary", value="Consumer Discretionary"),
