@@ -548,7 +548,7 @@ async def info(interaction: discord.Interaction, sector: str):
             await self.update_message(interaction)
 
     first_embed = discord.Embed(
-        title="f{sector} Tickers",
+        title=f"{sector} Tickers",
         description="\n".join(pages[0]),
         color=discord.Color.blue()
     )
