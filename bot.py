@@ -637,7 +637,7 @@ async def daily_chart(interaction: discord.Interaction, ticker: str):
     file = discord.File(fp=buf, filename=f"daily_chart.png")
     await interaction.followup.send(file=file)
 
-@scheduler.scheduled_job('cron', hour=2, minute=50, second=0)
+@scheduler.scheduled_job('cron', hour=1, minute=0, second=0)
 async def daily_scheduled_report():
     channel = bot.get_channel(ALLOWED_CHANNEL_ID)
 
